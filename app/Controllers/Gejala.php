@@ -36,7 +36,7 @@ class Gejala extends BaseController
 				],
 				'akut' => [
 					'rules' => 'required',
-					'label' => 'KnowledgeBase AKut',
+					'label' => 'KnowledgeBase Akut',
 					'errors' => [
 						'required' => '{field} Harus diisi'
 					]

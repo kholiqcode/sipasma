@@ -32,6 +32,8 @@ $routes->setAutoRoute(true);
 // We get a performance increase by specifying the default
 // route since we don't have to scan directories.
 $routes->get('/dashboard', 'Home::index');
+$routes->get('/api/gejala', 'Api::gejala');
+$routes->post('/api/assessment', 'Api::assessment');
 $routes->group('/', function ($routes) {
 	//Gejala
 	$routes->add('/gejala/list', 'Gejala::index');
