@@ -5,12 +5,11 @@ namespace App\Controllers;
 use App\Controllers\BaseController;
 use CodeIgniter\RESTful\ResourceController;
 
-class Api extends ResourceController
+class Api extends BaseController
 {
 	public function __construct()
 	{
 		helper('custom');
-		$this->db     = \Config\Database::connect();
 	}
 	//Keparahan
 	public const AKUT = 1;
@@ -43,11 +42,12 @@ class Api extends ResourceController
 	{
 		try {
 			$this->db->transBegin();
-			$reqGejala = $this->request->getPost('gejala');
+			$reqGejala = $this->request->getGet("gejala");
+			// return \App\Libraries\ResponseFormatter::success($reqGejala, "Assessment Berhasil");
 			$gejala = $this->db->table('gejala')->get()->getResultArray();
 			$penyakit = [];
 			$kondisi = [];
-			$nama = $this->request->getPost('nama');
+			$nama = $this->request->getGet('nama');
 			$kuisionerModel = new \App\Models\KuisionerModel();
 			$kuisionerModel->insert([
 				'nama' => $nama
@@ -62,11 +62,16 @@ class Api extends ResourceController
 					} else if (strval($item) == "periodik") {
 						$penyakit[$key] = self::PERIODIK;
 					}
-					$kondisi[$key] = [
+					array_push($kondisi, [
 						'id' => $key,
 						'nama' => $gejala[$key - 1]['nama'],
 						'keparahan' => convertKeparahan($penyakit[$key])
-					];
+					]);
+					// $kondisi[$key] = [
+					// 	'id' => $key,
+					// 	'nama' => $gejala[$key - 1]['nama'],
+					// 	'keparahan' => convertKeparahan($penyakit[$key])
+					// ];
 					$this->db->table('detail_kuisioner')->insert([
 						'kuisioner_id' => $kuisioner_id,
 						'gejala_id' => $key,
@@ -184,7 +189,7 @@ class Api extends ResourceController
 				'akut' => $kemungkinan['akut'],
 				'kronis' => $kemungkinan['kronis'],
 				'periodik' => $kemungkinan['periodik'],
-				'tipe_asma' => $tipeAsma,
+				'tipe_asma' => convertKeparahan($tipeAsma),
 			];
 
 			$this->db->table('kuisioner')->where('id', $kuisioner_id)->update($results);
@@ -194,6 +199,7 @@ class Api extends ResourceController
 			} else {
 				$this->db->transCommit();
 			}
+			$results['nama'] = $nama;
 			$results['kondisi'] = $kondisi;
 			return \App\Libraries\ResponseFormatter::success($results, "Assessment Berhasil");
 		} catch (\Throwable $e) {
