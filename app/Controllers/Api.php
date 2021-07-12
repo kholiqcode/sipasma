@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Controllers\BaseController;
+use App\Libraries\ResponseFormatter;
 use CodeIgniter\RESTful\ResourceController;
 
 class Api extends BaseController
@@ -40,6 +41,10 @@ class Api extends BaseController
 
 	public function assessment()
 	{
+	    // Rerouting karena ga work
+        return $this->assessmentV2();
+
+
 		try {
 			$this->db->transBegin();
 			$reqGejala = $this->request->getGet("gejala");
@@ -200,4 +205,120 @@ class Api extends BaseController
 			return \App\Libraries\ResponseFormatter::error($e->getMessage() ?? 'Terjadi Kesalahan');
 		}
 	}
+
+
+    /**
+     * Melakukan proses perhitungan, serta melakukan insert data kedalam database
+     *
+     * @licence https://github.com/kholiqcode/sipasma/blob/main/LICENSE
+     * @return ResponseFormatter API Formatter
+     */
+	public function assessmentV2()
+    {
+        try {
+            $this->db->transBegin();
+
+            $reqGejala = $this->request->getGet("gejala");
+            $gejala = $this->db->table('gejala')->get()->getResultArray();
+
+            $kondisi = [];
+            $penyakit = [];
+
+            $nama = $this->request->getGet('nama');
+            $kuisionerModel = new \App\Models\KuisionerModel();
+            $kuisionerModel->insert([
+                'nama' => $nama
+            ]);
+
+            $kuisioner_id = $kuisionerModel->getInsertID();
+
+            // Membuat objek prediktor untuk menaruh hasil prediksi
+            $nb = new NaiveBayes\NaiveBayesPredictor;
+
+            // Mengisi nilai default dari hipotesa
+            $nb->isiHipotesa(new NaiveBayes\HipotesaAsmaDefault("1", "AKUT", 0.3, "HIPOTESA"));
+            $nb->isiHipotesa(new NaiveBayes\HipotesaAsmaDefault("2", "KRONIS", 0.3, "HIPOTESA"));
+            $nb->isiHipotesa(new NaiveBayes\HipotesaAsmaDefault("3", "PERIODIK", 0.4, "HIPOTESA"));
+
+            foreach ($gejala as $gGejala)
+            {
+                // Membuat objek untuk menampung properti dari setuiap gejala
+                $hipotesaAsma = new NaiveBayes\HipotesaAsma;
+
+                // Labelling pada setiap gejala dan memberikan id yang sesuai
+                $hipotesaAsma->label = $gGejala["nama"];
+                $hipotesaAsma->id = $gGejala["id"];
+
+                // Memasukkan input nilai dan mengelompokkannya pada setiap hipotesa
+                $hipotesaDB = [
+                    new NaiveBayes\HipotesaAsmaDefault("1", "AKUT", $gGejala["akut"], "HIPOTESA_VALUE"),
+                    new NaiveBayes\HipotesaAsmaDefault("2", "KRONIS", $gGejala["kronis"], "HIPOTESA_VALUE"),
+                    new NaiveBayes\HipotesaAsmaDefault("3", "PERIODIK", $gGejala["periodik"], "HIPOTESA_VALUE")
+                ];
+
+                // Assign tipe berdasarkan pengelompokkan
+                $hipotesaAsma->tipe = $hipotesaDB;
+
+                // Isi gejala ini ke dalam wadah primer
+                $nb->isiGejala($hipotesaAsma);
+            }
+
+            // Merubah koresponeden pasien menjadi nilai boolean
+            foreach ($reqGejala as $key => $response)
+            {
+                $penyakit[$key] = $response == "ya";
+
+                // Menginputkan ke dalam database
+                $this->db->table('detail_kuisioner')->insert([
+                    'kuisioner_id' => $kuisioner_id,
+                    'gejala_id' => $key,
+                    'status' => $response === "ya"
+                ]);
+
+                array_push($kondisi, [
+                    'id' => $key,
+                    'nama' => $gejala[$key - 1]['nama'],
+                    'keparahan' => $penyakit[$key] == 1 ? 'Ya' : 'Tidak',
+                ]);
+
+                $nb->isiInput($key, $response === "ya");
+            }
+
+            $kuisioner = $this->db->table('kuisioner')->get()->getResultObject();
+
+            //Melakukan prediksi berdasarkan inputan
+            $prediksi = $nb->prediksi();
+
+
+            // Mencari data terbesar serta indexnya
+            $value = max(array_column($prediksi, "prediksi"));
+            
+            $key = array_search($value, array_column($prediksi, "prediksi"));
+
+
+            // Membuat formasi baru untuk diupdate kedalam database
+            $results = [
+                'akut' => $prediksi[0]["prediksi"],
+                'kronis' => $prediksi[1]["prediksi"],
+                'periodik' => $prediksi[2]["prediksi"],
+                'tipe_asma' => $key + 1,
+            ];
+
+            // Mengupdate DB
+            $this->db->table('kuisioner')->where('id', $kuisioner_id)->update($results);
+
+            if ($this->db->transStatus() === FALSE) {
+                $this->db->transRollback();
+            } else {
+                $this->db->transCommit();
+            }
+            $results['nama'] = $nama;
+            $results['kondisi'] = $kondisi;
+            return \App\Libraries\ResponseFormatter::success($results, "Assessment Berhasil");
+        } catch (\Throwable $e) {
+            $this->db->transRollback();
+            return \App\Libraries\ResponseFormatter::error($e->getMessage() ?? 'Terjadi Kesalahan');
+        }
+    }
+
 }

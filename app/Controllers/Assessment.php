@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Controllers\BaseController;
+use App\Controllers\NaiveBayes;
 
 class Assessment extends BaseController
 {
@@ -50,13 +51,19 @@ class Assessment extends BaseController
 			$this->db->transBegin();
 			$gejala = $this->request->getPost('gejala');
 
-			$kuisioner_id = $this->processAssessment($gejala);
+			//$kuisioner_id = $this->processAssessment($gejala);
+
+            $kuisioner_id = $this->postProcessDB($gejala);
+
 			if ($this->db->transStatus() === FALSE) {
 				$this->db->transRollback();
 			} else {
 				$this->db->transCommit();
 			}
-			// return redirect()->to('assessment/result/' . $kuisioner_id);
+			return redirect()->to('assessment/result/' . $kuisioner_id);
+
+            // return $this->result($kuisioner_id);
+
 		} catch (\Exception $e) {
 			$this->db->transRollback();
 			return $this->responseFormatter->error($e->getMessage() ?? 'Terjadi Kesalahan');
@@ -228,7 +235,7 @@ class Assessment extends BaseController
 			$kondisi[$item['id']] = [
 				'id' => $item['id'],
 				'nama' => $gejala[$item['gejala_id'] - 1]['nama'],
-				'keparahan' => convertKeparahan($item['status'])
+				'keparahan' => isMengalamiGejala($item['status'])
 			];
 		}
 
@@ -239,4 +246,104 @@ class Assessment extends BaseController
 
 		return view('pages/assessment/result', $data);
 	}
+
+
+    /**
+     * Melakukan perhitungan
+     *
+     * @licence https://github.com/kholiqcode/sipasma/blob/main/LICENSE
+     * @param array $gejalaResponse Array yang berisikan hasil dari responden
+     * @param int $kuisionerID ID kuisioner yang akan diupdate
+     * @return array Array yang berisikan hasil kalkulasi
+     */
+    protected function processAssessmentV2($gejalaResponse, $kuisionerID)
+    {
+        // Membuat objek prediktor untuk menaruh hasil prediksi
+        $nb = new NaiveBayes\NaiveBayesPredictor;
+
+        // Mengisi nilai default dari hipotesa
+        $nb->isiHipotesa(new NaiveBayes\HipotesaAsmaDefault("1", "AKUT", 0.3, "HIPOTESA"));
+        $nb->isiHipotesa(new NaiveBayes\HipotesaAsmaDefault("2", "KRONIS", 0.3, "HIPOTESA"));
+        $nb->isiHipotesa(new NaiveBayes\HipotesaAsmaDefault("3", "PERIODIK", 0.4, "HIPOTESA"));
+
+        // Mendapatkan Gejala
+        $gejalaModel = new \App\Models\GejalaModel();
+        $gejala = $gejalaModel->findAll();
+
+        foreach ($gejala as $gGejala)
+        {
+            // Membuat objek untuk menampung properti dari setuiap gejala
+            $hipotesaAsma = new NaiveBayes\HipotesaAsma;
+
+            // Labelling pada setiap gejala dan memberikan id yang sesuai
+            $hipotesaAsma->label = $gGejala["nama"];
+            $hipotesaAsma->id = $gGejala["id"];
+
+            // Memasukkan input nilai dan mengelompokkannya pada setiap hipotesa
+            $hipotesaDB = [
+                new NaiveBayes\HipotesaAsmaDefault("1", "AKUT", $gGejala["akut"], "HIPOTESA_VALUE"),
+                new NaiveBayes\HipotesaAsmaDefault("2", "KRONIS", $gGejala["kronis"], "HIPOTESA_VALUE"),
+                new NaiveBayes\HipotesaAsmaDefault("3", "PERIODIK", $gGejala["periodik"], "HIPOTESA_VALUE")
+            ];
+
+            // Assign tipe berdasarkan pengelompokkan
+            $hipotesaAsma->tipe = $hipotesaDB;
+
+            // Isi gejala ini ke dalam wadah primer
+            $nb->isiGejala($hipotesaAsma);
+        }
+
+
+        // Mengulang setiap iterasi input, mengubahnya kedalam format boolean
+        foreach ($gejalaResponse as $key => $response)
+        {
+            $this->db->table('detail_kuisioner')->insert([
+                'kuisioner_id' => $kuisionerID,
+                'gejala_id' => $key,
+                'status' => $response === "ya"
+            ]);
+
+            $nb->isiInput($key, $response === "ya");
+        }
+
+        //Melakukan prediksi berdasarkan inputan
+        return $nb->prediksi();
+    }
+
+    /**
+     * Melakukan proses perhitungan, serta melakukan insert data kedalam database
+     *
+     * @licence https://github.com/kholiqcode/sipasma/blob/main/LICENSE
+     * @param array $gGejala Array yang berisikan hasil dari responden
+     * @return int id kuisioner yang telah dibuat sebelumnya, digunakan dalam mengupdate data yang akan mendatang
+     */
+    protected function postProcessDB($gGejala)
+    {
+        $nama = $this->request->getPost('nama');
+        $kuisionerModel = new \App\Models\KuisionerModel();
+        $kuisionerModel->insert([
+            'nama' => $nama
+        ]);
+        $kuisioner_id = $kuisionerModel->getInsertID();
+
+        // Mengambil data kalkulasi
+        $hasilKalkulasi = $this->processAssessmentV2($gGejala, $kuisioner_id);
+
+
+        // Mencari data terbesar dan indexnya
+        $value = max(array_column($hasilKalkulasi, "prediksi"));
+
+        $key = array_search($value, array_column($hasilKalkulasi, "prediksi"));
+
+
+        // Mengupdate data
+        $this->db->table('kuisioner')->where('id', $kuisioner_id)->update([
+            'akut' => $hasilKalkulasi[0]["prediksi"],
+            'kronis' => $hasilKalkulasi[1]["prediksi"],
+            'periodik' => $hasilKalkulasi[2]["prediksi"],
+            'tipe_asma' => $key + 1,
+        ]);
+
+        return $kuisioner_id;
+    }
 }

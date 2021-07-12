@@ -1,5 +1,11 @@
 <?php
 
+if(!function_exists("isMengalamiGejala")){
+    function isMengalamiGejala(int $int) : bool{
+        return $int > 0;
+    }
+}
+
 if (!function_exists("convertKeparahan")) {
     function convertKeparahan(int $int)
     {
