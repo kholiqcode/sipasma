@@ -60,27 +60,15 @@
                                     <div class="form-group row">
                                         <label class="col-md-4" for="gejala"><?= $item['nama'] ?></label>
                                         <div class="icheck-primary d-inline col-md-2">
-                                            <input type="radio" id="radioPrimary1<?= $item['id'] ?>" value="akut" name="gejala[<?= $item['id'] ?>]">
+                                            <input type="radio" id="radioPrimary1<?= $item['id'] ?>" value="ya" name="gejala[<?= $item['id'] ?>]">
                                             <label for="radioPrimary1<?= $item['id'] ?>">
-                                                Akut
+                                                Ya
                                             </label>
                                         </div>
                                         <div class="icheck-primary d-inline col-md-2">
-                                            <input type="radio" id="radioPrimary2<?= $item['id'] ?>" value="kronis" name="gejala[<?= $item['id'] ?>]">
+                                            <input type="radio" id="radioPrimary2<?= $item['id'] ?>" value="tidak" name="gejala[<?= $item['id'] ?>]">
                                             <label for="radioPrimary2<?= $item['id'] ?>">
-                                                Kronis
-                                            </label>
-                                        </div>
-                                        <div class="icheck-primary d-inline col-md-2">
-                                            <input type="radio" id="radioPrimary3<?= $item['id'] ?>" value="periodik" name="gejala[<?= $item['id'] ?>]">
-                                            <label for="radioPrimary3<?= $item['id'] ?>">
-                                                Periodik
-                                            </label>
-                                        </div>
-                                        <div class="icheck-primary d-inline">
-                                            <input type="radio" id="radioPrimary4<?= $item['id'] ?>" value="unknown" name="gejala[<?= $item['id'] ?>]">
-                                            <label for="radioPrimary4<?= $item['id'] ?>">
-                                                Tidak Tahu
+                                                Tidak
                                             </label>
                                         </div>
                                     </div>

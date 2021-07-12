@@ -56,7 +56,7 @@ class Assessment extends BaseController
 			} else {
 				$this->db->transCommit();
 			}
-			return redirect()->to('assessment/result/' . $kuisioner_id);
+			// return redirect()->to('assessment/result/' . $kuisioner_id);
 		} catch (\Exception $e) {
 			$this->db->transRollback();
 			return $this->responseFormatter->error($e->getMessage() ?? 'Terjadi Kesalahan');
@@ -75,18 +75,16 @@ class Assessment extends BaseController
 		]);
 		$kuisioner_id = $kuisionerModel->getInsertID();
 		foreach ($reqGejala as $key => $item) {
-			if (in_array($item, ['akut', 'kronis', 'periodik'])) {
-				if ($item == "akut") {
-					$penyakit[$key] = self::AKUT;
-				} else if ($item == "kronis") {
-					$penyakit[$key] = self::KRONIS;
-				} else if ($item == "periodik") {
-					$penyakit[$key] = self::PERIODIK;
+			if (in_array($item, ['ya', 'tidak'])) {
+				if ($item == "ya") {
+					$penyakit[$key] = 1;
+				} else if ($item == "tidak") {
+					$penyakit[$key] = 0;
 				}
 				$kondisi[$key] = [
 					'id' => $key,
 					'nama' => $gejala[$key - 1]['nama'],
-					'keparahan' => convertKeparahan($penyakit[$key])
+					'keparahan' => $penyakit[$key] == 1 ? 'Ya' : 'Tidak',
 				];
 				$this->db->table('detail_kuisioner')->insert([
 					'kuisioner_id' => $kuisioner_id,
@@ -127,13 +125,13 @@ class Assessment extends BaseController
 			foreach ($penyakit as $key3 => $value3) {
 				if ($value1 == self::AKUT) {
 					$pElement[0][0] = $this->persentaseAkut;
-					$pElement[0][$index6] = $value3 === self::AKUT ? doubleval($gejala[$key3 - 1]['akut']) : $this->persentaseAkut;
+					$pElement[0][$index6] = doubleval($gejala[$key3 - 1]['akut']);
 				} else if ($value1 == self::KRONIS) {
 					$pElement[0][0] = $this->persentaseKronis;
-					$pElement[0][$index6] = $value3 === self::KRONIS ? doubleval($gejala[$key3 - 1]['kronis']) : $this->persentaseKronis;
+					$pElement[0][$index6] = doubleval($gejala[$key3 - 1]['kronis']);
 				} else {
 					$pElement[0][0] = $this->persentasePeriodik;
-					$pElement[0][$index6] = $value3 === self::PERIODIK ? doubleval($gejala[$key3 - 1]['periodik']) : $this->persentasePeriodik;
+					$pElement[0][$index6] = doubleval($gejala[$key3 - 1]['periodik']);
 				}
 				$index6++;
 			}
@@ -144,15 +142,15 @@ class Assessment extends BaseController
 			foreach ($this->keparahan as $key4 => $value4) {
 				$index3  = 1;
 				foreach ($penyakit as $key5 => $value5) {
-					if ($value4 == self::AKUT) {
+					if ($value4 == self::AKUT && $value5 == 1) {
 						$pElement[$index2][0] = $this->persentaseAkut;
-						$pElement[$index2][$index3] = $value5 === $value4 ? doubleval($gejala[$key5 - 1]['akut']) : $this->persentaseAkut;
-					} else if ($value4 == self::KRONIS) {
+						$pElement[$index2][$index3] = doubleval($gejala[$key5 - 1]['akut']);
+					} else if ($value4 == self::KRONIS && $value5 == 1) {
 						$pElement[$index2][0] = $this->persentaseKronis;
-						$pElement[$index2][$index3] = $value5 === $value4 ? doubleval($gejala[$key5 - 1]['kronis']) : $this->persentaseKronis;
-					} else {
+						$pElement[$index2][$index3] = doubleval($gejala[$key5 - 1]['kronis']);
+					} else if ($value4 == self::PERIODIK && $value5 == 1) {
 						$pElement[$index2][0] = $this->persentasePeriodik;
-						$pElement[$index2][$index3] = $value5 === $value4 ? doubleval($gejala[$key5 - 1]['periodik']) : $this->persentasePeriodik;
+						$pElement[$index2][$index3] = doubleval($gejala[$key5 - 1]['periodik']);
 					}
 					$index3++;
 				}
@@ -179,13 +177,13 @@ class Assessment extends BaseController
 
 			if ($value1 == self::AKUT) {
 				$kemungkinan['akut'] = intval(($pertama / $pKedua) * 100);
-				// echo "Kemungkinan Asma Akut: ($pertama / $pKedua)*100 = " . intval(($pertama / $pKedua) * 100) . "% <br>";
+				echo "Kemungkinan Asma Akut: ($pertama / $pKedua)*100 = " . intval(($pertama / $pKedua) * 100) . "% <br>";
 			} else if ($value1 == self::KRONIS) {
 				$kemungkinan['kronis'] = intval(($pertama / $pKedua) * 100);
-				// echo "Kemungkinan Asma Kronis: ($pertama / $pKedua)*100 = " . intval(($pertama / $pKedua) * 100) . "% <br>";
+				echo "Kemungkinan Asma Kronis: ($pertama / $pKedua)*100 = " . intval(($pertama / $pKedua) * 100) . "% <br>";
 			} else if ($value1 == self::PERIODIK) {
 				$kemungkinan['periodik'] = intval(($pertama / $pKedua) * 100);
-				// echo "Kemungkinan Asma Periodik: ($pertama / $pKedua)*100 = " . intval(($pertama / $pKedua) * 100) . "% <br>";
+				echo "Kemungkinan Asma Periodik: ($pertama / $pKedua)*100 = " . intval(($pertama / $pKedua) * 100) . "% <br>";
 			}
 			// End Upper Element divided by Bottom Element
 			array_push($ress, $pElement);
@@ -210,11 +208,12 @@ class Assessment extends BaseController
 		return $kuisioner_id;
 	}
 
-	public function list(){
+	public function list()
+	{
 		$kuisionerModel = new \App\Models\KuisionerModel();
 		$data['kuisioner'] = $kuisionerModel->findAll();
 
-		return view('pages/assessment/list',$data);
+		return view('pages/assessment/list', $data);
 	}
 
 	public function result($id)

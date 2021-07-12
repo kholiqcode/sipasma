@@ -54,24 +54,17 @@ class Api extends BaseController
 			]);
 			$kuisioner_id = $kuisionerModel->getInsertID();
 			foreach ($reqGejala as $key => $item) {
-				if (in_array($item, ['akut', 'kronis', 'periodik'])) {
-					if (strval($item) == "akut") {
-						$penyakit[$key] = self::AKUT;
-					} else if (strval($item) == "kronis") {
-						$penyakit[$key] = self::KRONIS;
-					} else if (strval($item) == "periodik") {
-						$penyakit[$key] = self::PERIODIK;
+				if (in_array($item, ['ya', 'tidak'])) {
+					if ($item == "ya") {
+						$penyakit[$key] = 1;
+					} else if ($item == "tidak") {
+						$penyakit[$key] = 0;
 					}
 					array_push($kondisi, [
 						'id' => $key,
 						'nama' => $gejala[$key - 1]['nama'],
-						'keparahan' => convertKeparahan($penyakit[$key])
+						'keparahan' => $penyakit[$key] == 1 ? 'Ya' : 'Tidak',
 					]);
-					// $kondisi[$key] = [
-					// 	'id' => $key,
-					// 	'nama' => $gejala[$key - 1]['nama'],
-					// 	'keparahan' => convertKeparahan($penyakit[$key])
-					// ];
 					$this->db->table('detail_kuisioner')->insert([
 						'kuisioner_id' => $kuisioner_id,
 						'gejala_id' => $key,
@@ -111,13 +104,13 @@ class Api extends BaseController
 				foreach ($penyakit as $key3 => $value3) {
 					if ($value1 == self::AKUT) {
 						$pElement[0][0] = $this->persentaseAkut;
-						$pElement[0][$index6] = $value3 === self::AKUT ? doubleval($gejala[$key3 - 1]['akut']) : $this->persentaseAkut;
+						$pElement[0][$index6] = doubleval($gejala[$key3 - 1]['akut']);
 					} else if ($value1 == self::KRONIS) {
 						$pElement[0][0] = $this->persentaseKronis;
-						$pElement[0][$index6] = $value3 === self::KRONIS ? doubleval($gejala[$key3 - 1]['kronis']) : $this->persentaseKronis;
+						$pElement[0][$index6] = doubleval($gejala[$key3 - 1]['kronis']);
 					} else {
 						$pElement[0][0] = $this->persentasePeriodik;
-						$pElement[0][$index6] = $value3 === self::PERIODIK ? doubleval($gejala[$key3 - 1]['periodik']) : $this->persentasePeriodik;
+						$pElement[0][$index6] = doubleval($gejala[$key3 - 1]['periodik']);
 					}
 					$index6++;
 				}
@@ -128,15 +121,15 @@ class Api extends BaseController
 				foreach ($this->keparahan as $key4 => $value4) {
 					$index3  = 1;
 					foreach ($penyakit as $key5 => $value5) {
-						if ($value4 == self::AKUT) {
+						if ($value4 == self::AKUT && $value5 == 1) {
 							$pElement[$index2][0] = $this->persentaseAkut;
-							$pElement[$index2][$index3] = $value5 === $value4 ? doubleval($gejala[$key5 - 1]['akut']) : $this->persentaseAkut;
-						} else if ($value4 == self::KRONIS) {
+							$pElement[$index2][$index3] = doubleval($gejala[$key5 - 1]['akut']);
+						} else if ($value4 == self::KRONIS && $value5 == 1) {
 							$pElement[$index2][0] = $this->persentaseKronis;
-							$pElement[$index2][$index3] = $value5 === $value4 ? doubleval($gejala[$key5 - 1]['kronis']) : $this->persentaseKronis;
-						} else {
+							$pElement[$index2][$index3] = doubleval($gejala[$key5 - 1]['kronis']);
+						} else if ($value4 == self::PERIODIK && $value5 == 1) {
 							$pElement[$index2][0] = $this->persentasePeriodik;
-							$pElement[$index2][$index3] = $value5 === $value4 ? doubleval($gejala[$key5 - 1]['periodik']) : $this->persentasePeriodik;
+							$pElement[$index2][$index3] = doubleval($gejala[$key5 - 1]['periodik']);
 						}
 						$index3++;
 					}
