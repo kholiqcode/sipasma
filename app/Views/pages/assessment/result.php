@@ -40,12 +40,16 @@
                                     </tr>
                                 </thead>
                                 <tbody>
+                                    <!--Pakai index saja bosque, biar ga pusing lihat urutannya-->
+                                    <?php $idx = 1; ?>
                                     <?php foreach ($kondisi as $key => $item) : ?>
                                         <tr>
-                                            <td><?= $key ?>.</td>
+                                            <td><?= $idx ?>.</td>
                                             <td><?= $item['nama'] ?></td>
-                                            <td><span class="badge bg-danger"><?= $item['keparahan'] ?></span></td>
+                                            <!--Kalau ikut papernya cukup span apabila mengalami gejala atau tidak-->
+                                            <td><span class="badge <?= $item['keparahan'] ? 'bg-danger' : 'bg-success' ?>"><?= $item['keparahan'] ? "Gejala Dialami" : "Gejala Tidak Dialami" ?></span></td>
                                         </tr>
+                                        <?php $idx++; ?>
                                     <?php endforeach ?>
                                 </tbody>
                             </table>
@@ -68,7 +72,7 @@
                             <table class="table">
                                 <thead>
                                     <tr>
-                                        <th style="width: 10px">#</th>
+                                        <th style="width: 10px">Probabilitas</th>
                                         <th class="text-center">Akut</th>
                                         <th class="text-center">Kronis</th>
                                         <th class="text-center">Periodik</th>
