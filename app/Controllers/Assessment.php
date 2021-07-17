@@ -304,7 +304,7 @@ class Assessment extends BaseController
                 'status' => $response === "ya"
             ]);
 
-            $nb->isiInput($key, $response === "ya");
+            $nb->isiInput($gejala[$key-1], $response === "ya");
 		}
         }
 
