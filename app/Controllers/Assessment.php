@@ -303,7 +303,7 @@ class Assessment extends BaseController
                 'status' => $response === "ya"
             ]);
 
-            $nb->isiInput($key, $response === "ya");
+            $nb->isiInput($key-1, $response === "ya");
         }
 
         //Melakukan prediksi berdasarkan inputan
