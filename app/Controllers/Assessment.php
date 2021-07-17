@@ -49,7 +49,7 @@ class Assessment extends BaseController
 				return $this->responseFormatter->error($this->validator->getError() ?? 'Terjadi Kesalahan');
 			}
 			$this->db->transBegin();
-			$gejala = $this->request->getPost('gejala');
+			$gejala = $this->request->getVar('gejala');
 
 			//$kuisioner_id = $this->processAssessment($gejala);
 

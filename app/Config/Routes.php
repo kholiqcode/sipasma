@@ -34,6 +34,7 @@ $routes->setAutoRoute(true);
 $routes->get('/dashboard', 'Home::index');
 $routes->get('/api/gejala', 'Api::gejala');
 $routes->post('/api/assessment', 'Api::assessmentV2');
+$routes->post('/api/assessment2', 'Api::assessment');
 $routes->group('/', function ($routes) {
 	//Gejala
 	$routes->add('/gejala/list', 'Gejala::index');
