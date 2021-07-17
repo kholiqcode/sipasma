@@ -297,13 +297,15 @@ class Assessment extends BaseController
         // Mengulang setiap iterasi input, mengubahnya kedalam format boolean
         foreach ($gejalaResponse as $key => $response)
         {
+			if (in_array($response, ['ya', 'tidak'])) {
             $this->db->table('detail_kuisioner')->insert([
                 'kuisioner_id' => $kuisionerID,
                 'gejala_id' => $key,
                 'status' => $response === "ya"
             ]);
 
-            $nb->isiInput($key-1, $response === "ya");
+            $nb->isiInput($key, $response === "ya");
+		}
         }
 
         //Melakukan prediksi berdasarkan inputan
