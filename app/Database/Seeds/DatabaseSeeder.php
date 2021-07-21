@@ -124,5 +124,15 @@ class DatabaseSeeder extends Seeder
 		];
 
 		$this->db->table('kuisioner')->insertBatch($dataKuiosiner);
+
+		$dataUser = [
+			[
+				'nama' => 'Admin',
+				'email' => 'admin@mail.com',
+				'password' => '$2y$10$Fb50NW68CP6tJXNSAXllYegXwMS8HvvBwY4.Ws8r23ZCeQnOnVb6.', //password
+			]
+		];
+
+		$this->db->table('user')->insertBatch($dataUser);
 	}
 }

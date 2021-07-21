@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title><?= $title ?? 'Elektronik Sistem Informasi Kinerja Pemeriksa' ?> | e-SIKAP</title>
+    <title><?= $title ?? 'Sistem Pakar Deteksi Asma' ?> | SIKARMA</title>
 
     <link rel="shortcut icon" href="<?= base_url('assets/dist/img/e.png') ?>">
     <!-- Google Font: Source Sans Pro -->
@@ -22,13 +22,13 @@
 
     <?= $this->renderSection('app') ?>
     <!-- jQuery -->
-    <script src="<?= base_url('assets/plugins/jquery/jquery.min.js')?>"></script>
+    <script src="<?= base_url('assets/plugins/jquery/jquery.min.js') ?>"></script>
     <!-- Bootstrap 4 -->
     <script src="<?= base_url('assets/plugins/bootstrap/js/bootstrap.bundle.min.js') ?>"></script>
     <!-- AdminLTE App -->
-    <script src="<?= base_url('assets/dist/js/adminlte.min.js')?>"></script>
+    <script src="<?= base_url('assets/dist/js/adminlte.min.js') ?>"></script>
     <!-- AdminLTE for demo purposes -->
-    <script src="<?= base_url('assets/dist/js/demo.js')?>"></script>
+    <script src="<?= base_url('assets/dist/js/demo.js') ?>"></script>
     <?= $this->renderSection('script') ?>
 
 </body>
