@@ -36,7 +36,7 @@ class Filters extends BaseConfig
 				'except' => [
 					'auth/*',
 					'api/*',
-					'/assessment',
+					'/assessment/*',
 				]
 			],
 		],
